@@ -187,7 +187,22 @@ class Agent(object):
         fingerprint: Optional[Text] = None
     ):
         # Initializing variables with the passed parameters.
-        self.domain = self._create_domain(domain)
+
+        # if domain points to a folder, try to list and merge domain files
+        if os.path.isdir(domain):
+            for file in os.listdir(domain):
+                filepath = domain + file
+                logger.info("Loading domain {}...".format(filepath))
+                if file.endswith(".yml"):
+                    loaded_domain = self._create_domain(filepath)
+                    if not hasattr(self, 'domain') or self.domain is None:
+                        self.domain = loaded_domain
+                    else :
+                        logger.info("Merging domain {}...".format(filepath))
+                        self.domain = self.domain.merge(loaded_domain)
+        else:
+            self.domain = self._create_domain(domain)
+        
         if self.domain:
             self.domain.add_requested_slot()
         self.policy_ensemble = self._create_ensemble(policies)
